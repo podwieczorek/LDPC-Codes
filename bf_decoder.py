@@ -35,12 +35,9 @@ def decode(h, h_alist, received_msg):
         #  for every message bit calculate in how many failed parity checks the message bit was involved
         f = calculate_failed_parity_checks_per_bit(h_alist, n, s)
 
-        # flip bits in message that were involved in failed parity checks
+        # flip bits involved in failed parity checks
         for i, fi in enumerate(f):
             if fi >= flipping_threshold:
-                received_msg[i] += 1
-                received_msg = received_msg % 2
-
+                received_msg[i] = 1 - received_msg[i]  # flip bit
         iteration += 1
-
     return received_msg

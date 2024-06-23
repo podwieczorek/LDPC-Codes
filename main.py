@@ -2,13 +2,14 @@ import numpy as np
 import warnings
 import os
 
+import channels.bsc
 from encoder import encode
 from bf_decoder import decode
 
 
 def get_h_alist(file_path):
     if not os.path.isfile(file_path):
-        warnings.warn("File does not exist, check file path")
+        warnings.warn('File does not exist, check file path')
 
     with open(file_path, 'r') as file:
         content = file.readlines()
@@ -28,7 +29,5 @@ if __name__ == "__main__":
         message = [0, 1, 0, 1]
 
         encoded_message = encode(h, k, message)
-        print(encoded_message)
-        # signal = awgn_bpsk_channel(encoded_message, K, N, eb_n0)
-        decoded_message = decode(h, h_alist, encoded_message)
-        print(decoded_message)
+        received_message = channels.bsc.transmit(encoded_message, 0.1)
+        decoded_message = decode(h, h_alist, received_message)
