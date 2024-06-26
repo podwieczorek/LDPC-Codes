@@ -20,13 +20,13 @@ def decode(h, h_alist, received_msg):
     max_num_of_iteration = 10  # todo how to choose number of iterations?
     flipping_threshold = 1  # todo how to choose the threshold?
     n = np.shape(h)[1]
-    k = n - np.shape(h)[0]
-    no_errors_s = np.zeros(k)
+    m = np.shape(h)[0]
+    no_errors_s = np.zeros(m)
 
     iteration = 0
     while iteration < max_num_of_iteration:
         # calculate syndrome
-        s = np.dot(received_msg, np.transpose(h)) % 2
+        s = (received_msg @ np.transpose(h))
 
         # message decoded successfully
         if s == no_errors_s:

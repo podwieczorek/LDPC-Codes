@@ -2,9 +2,9 @@ import numpy as np
 import warnings
 import os
 
-import channels.bsc
+import channels.awgn_bpsk
 from encoder import encode
-from bf_decoder import decode
+from wbf_decoder import decode
 
 
 def get_h_alist(file_path):
@@ -25,9 +25,7 @@ if __name__ == "__main__":
     messages = 1
 
     for _ in range(messages):
-        # message = np.random.randint(low=0, high=2, size=k)
-        message = [0, 1, 0, 1]
-
+        message = np.random.randint(low=0, high=2, size=k)
         encoded_message = encode(h, k, message)
-        received_message = channels.bsc.transmit(encoded_message, 0.1)
+        received_message = channels.awgn_bpsk.transmit(encoded_message, 2)
         decoded_message = decode(h, h_alist, received_message)
