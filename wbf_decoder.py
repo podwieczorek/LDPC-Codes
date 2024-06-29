@@ -17,20 +17,17 @@ def calculate_weights(h_alist, message, m):
 
 
 def decode(h, h_alist, message):
-
     max_num_of_iterations = 10
-    n = np.shape(h)[1]
-    m = np.shape(h)[0]
+    m, n = np.shape(h)
     message_hd, message_sd = message
     weights = calculate_weights(h_alist, message_sd, m)
-    no_errors_s = np.zeros(m, dtype=int)
 
     iterations = 0
     while iterations < max_num_of_iterations:
         # calculate syndrome
         s = (message_hd @ np.transpose(h))
         # message decoded successfully
-        if (s == no_errors_s).all():
+        if not s.any():
             break
 
         en = np.zeros(n)
@@ -40,7 +37,7 @@ def decode(h, h_alist, message):
                 if parity_check_index == -1:
                     break
                 else:
-                    en[i] -= weights[parity_check_index] * (1 - 2*s[parity_check_index])
+                    en[i] -= weights[parity_check_index] * (1 - 2 * s[parity_check_index])
 
         # find the biggest element in en and flip the bit
         max_en_index = en.argmax()

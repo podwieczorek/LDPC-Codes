@@ -3,8 +3,7 @@ import numpy as np
 
 
 def gauss_jordan_elimination(h, k):
-    m = np.shape(h)[0]
-    n = np.shape(h)[1]
+    m, n = np.shape(h)
     # initialize pivot
     i = 0
     j = k
