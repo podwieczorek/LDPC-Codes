@@ -4,7 +4,7 @@ import os
 
 import channels.awgn_bpsk
 from encoder import encode
-from bp_decoder import decode
+from ms_decoder import decode
 
 
 def get_h_alist(file_path):
