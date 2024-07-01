@@ -4,7 +4,7 @@ import os
 
 import channels.awgn_bpsk
 from encoder import encode
-from wbf_decoder import decode
+from bp_decoder import decode
 
 
 def get_h_alist(file_path):
@@ -28,7 +28,6 @@ if __name__ == "__main__":
     k = n - np.shape(h)[0]
     messages = 1
 
-    print(h_alist)
     for _ in range(messages):
         message = np.random.randint(low=0, high=2, size=k)
         encoded_message = encode(h, k, message)
