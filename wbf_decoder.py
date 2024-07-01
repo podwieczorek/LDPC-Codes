@@ -1,18 +1,19 @@
 import numpy as np
 
+# todo test
+
 
 def calculate_weights(h_alist, message, m):
     weights = np.full(m, 10000.0)
-    k = int(h_alist[0].split()[0])
+    k = h_alist[0][0] - h_alist[0][1]
     # for every check bit find its message bit with the smallest magnitude
     for i, weight in enumerate(weights):
-        variable_nodes = h_alist[4 + k + i].split()
+        variable_nodes = h_alist[4 + k + i]
         for j in variable_nodes:
-            message_bit_index = int(j) - 1
-            if j == '0':
+            if j == 0:
                 break
-            elif abs(message[message_bit_index]) < weights[i]:
-                weights[i] = abs(message[message_bit_index])
+            elif abs(message[j - 1]) < weights[i]:
+                weights[i] = abs(message[j - 1])
     return weights
 
 
@@ -33,7 +34,7 @@ def decode(h, h_alist, message):
         en = np.zeros(n)
         for i in range(n):
             for j in range(m):
-                parity_check_index = int(h_alist[i + 4].split()[j]) - 1
+                parity_check_index = h_alist[i + 4][j] - 1
                 if parity_check_index == -1:
                     break
                 else:

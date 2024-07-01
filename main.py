@@ -12,8 +12,12 @@ def get_h_alist(file_path):
         warnings.warn('File does not exist, check file path')
 
     with open(file_path, 'r') as file:
-        content = file.readlines()
-        return content
+        h_alist_int = []
+        for line in file:
+            row = [int(i) for i in line.split()]
+            h_alist_int.append(row)
+
+        return h_alist_int
 
 
 if __name__ == "__main__":
@@ -24,6 +28,7 @@ if __name__ == "__main__":
     k = n - np.shape(h)[0]
     messages = 1
 
+    print(h_alist)
     for _ in range(messages):
         message = np.random.randint(low=0, high=2, size=k)
         encoded_message = encode(h, k, message)

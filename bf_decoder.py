@@ -1,15 +1,17 @@
 import numpy as np
 
+# todo test!
+
 
 def calculate_failed_parity_checks_per_bit(h_alist, n, s):
     f = np.zeros(n)
     for i in range(n):
-        mi = h_alist[i + 4].split()
+        mi = h_alist[i + 4]
         for j in mi:
-            if j == '0':
+            if j == 0:
                 break
             else:
-                if s[int(j) - 1] == 1:
+                if s[j - 1] == 1:
                     f[i] += 1
     return f
 
