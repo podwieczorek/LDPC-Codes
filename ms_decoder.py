@@ -75,7 +75,7 @@ def perform_row_operations(llr, check_nodes_indices):
 
 
 def decode(h, h_alist, message):
-    max_num_of_iterations = 10
+    max_num_of_iterations = 15
     m, n = np.shape(h)
     message_hd, message_sd = message
     llr = init_llr(m, n, message_sd, h_alist[4:4+n])

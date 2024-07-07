@@ -22,8 +22,8 @@ def get_h_alist(file_path):
 
 
 if __name__ == "__main__":
-    h_alist = get_h_alist('h_matrices/BCH_7_4_1_strip.alist')
-    h_txt = 'h_matrices/BCH_7_4_1_strip.txt'
+    h_alist = get_h_alist('h_matrices/wifi_648_r083.alist')
+    h_txt = 'h_matrices/wifi_648_r083.txt'
     h = np.loadtxt(h_txt, dtype=int)
     n = np.shape(h)[1]
     k = n - np.shape(h)[0]
