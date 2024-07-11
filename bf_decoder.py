@@ -25,7 +25,7 @@ def decode(h, h_alist, received_msg):
     iteration = 0
     while iteration < max_num_of_iteration:
         # calculate syndrome
-        s = (received_msg @ np.transpose(h))
+        s = (received_msg @ np.transpose(h)) % 2
         # message decoded successfully
         if not s.any():
             break

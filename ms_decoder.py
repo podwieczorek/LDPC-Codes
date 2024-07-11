@@ -84,7 +84,7 @@ def decode(h, h_alist, message):
     decoded_message = np.copy(message_hd)
     while iterations < max_num_of_iterations:
         # calculate syndrome
-        s = (decoded_message @ np.transpose(h) % 2)
+        s = (decoded_message @ np.transpose(h)) % 2
         # message decoded successfully
         if not s.any():
             break
@@ -95,3 +95,5 @@ def decode(h, h_alist, message):
         decoded_message = (sum_vector > 0).astype(int)
 
         iterations += 1
+
+    return decoded_message

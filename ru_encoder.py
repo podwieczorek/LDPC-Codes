@@ -6,20 +6,21 @@ import numpy as np
 def calculate_phi(h, g):
     m = np.shape(h)[0]
     a = h[:m - g, m - g:m]
-    c = h[m-g:m-g:m]
+    c = h[m-g:, m-g:m]
     e = h[m - g:, :m - g]
-    t_inv = np.linalg.inv(h[:m-g, :m-g])
+    t_inv = np.linalg.inv(h[:m-g, :m-g])  # todo in gf2
     eta = e @ (t_inv @ a)
+    print(eta)
     return c - eta
 
 
-def minimum_residual_degree(h, g, t):
+def minimum_residual_degree(h, t, g):
     m, n = np.shape(h)
     residual_h = h[t:m - g, t:n]
     column_sums = np.sum(residual_h, axis=0)
-    nonzero_sums = column_sums[column_sums > 0]
-    min_nonzero_weight = np.min(nonzero_sums)
-    columns_with_min_weight = np.where(column_sums == min_nonzero_weight)[0]
+    column_sums[column_sums == 0] = np.iinfo(np.int32).max
+    min_nonzero_weight = np.min(column_sums)
+    columns_with_min_weight = np.where(column_sums == min_nonzero_weight)[0] + t
     return min_nonzero_weight, columns_with_min_weight
 
 
@@ -30,10 +31,9 @@ def extend(h, column_to_swap, t, g):
     h[:, [t, column_to_swap]] = h[:, [column_to_swap, t]]
     # find row with 1 in residual parity check matrix
     sub_array = h[t:m - g, t]
-    row_indices = np.where(sub_array == 1)[0]
-    row_to_swap = (m-t) + row_indices[0]
+    row_to_swap = np.where(sub_array == 1)[0][0] + t
     # swap rows
-    h[[t, row_to_swap]:] = h[[row_to_swap, t]:]
+    h[[t, row_to_swap], :] = h[[row_to_swap, t], :]
 
 
 def choose(h, column_to_swap, t, g):
@@ -42,20 +42,25 @@ def choose(h, column_to_swap, t, g):
     h[:, [t, column_to_swap]] = h[:, [column_to_swap, t]]
     # find rows with 1 in residual parity check matrix
     sub_array = h[t:m-g, t]
-    row_indices = np.where(sub_array == 1)[0] + (m-t)
+    row_indices = np.where(sub_array == 1)[0] + t
+
     # swap first row
-    h[[t, row_indices[0]]:] = h[[row_indices[0], t]:]
+    first_row_to_swap = int(row_indices[0])
+    h[[t, first_row_to_swap], :] = h[[first_row_to_swap, t], :]
 
     # move other rows with 1 at the end of the h matrix
     rows_to_move = []
-    # todo make it more efficient
-    for row_index in row_indices[-1:1]:
-        np.concatenate(rows_to_move, h[row_index:], axis=0)
+    for row_index in row_indices[-1:0:-1]:
+        if rows_to_move == []:
+            rows_to_move = h[row_index]
+        else:
+            rows_to_move = np.vstack((rows_to_move, h[row_index]))
         h = np.delete(h, row_index, axis=0)
-    np.concatenate(h, rows_to_move, axis=0)
 
-    # todo check size()
-    return row_indices.size() - 1
+    rows_to_move = np.reshape(rows_to_move, (row_indices.size-1, n))
+    np.concatenate((h, rows_to_move), axis=0)
+
+    return row_indices.size - 1
 
 
 def approximate_upper_triangulation(h):
@@ -67,7 +72,8 @@ def approximate_upper_triangulation(h):
             return h, g
         # find minimum residual degree and columns with that degree
         min_res_degree, columns = minimum_residual_degree(h, t, g)
-        random_column = columns[np.random.uniform(0, columns.size())]  # todo check size()
+        chosen_column_index = np.random.randint(0, columns.size, dtype=int)
+        random_column = columns[chosen_column_index]
         if min_res_degree == 1:
             extend(h, random_column, t, g)
         else:
@@ -82,8 +88,12 @@ def approximate_upper_triangulation(h):
 def preprocess(h):
     # parity check matrix h in approximate upper-triangular form and gap g
     h_aut, g = approximate_upper_triangulation(h)
-    phi = calculate_phi(h_aut, g)
-    return h, g, phi
+    # if gap is 0, calculating phi is not needed
+    if g == 0:
+        return h, g, []
+    else:
+        phi = calculate_phi(h_aut, g)
+        return h, g, phi
 
 
 def calculate_p1(h, s, p2, g):
@@ -104,8 +114,8 @@ def calculate_p2(h, s, phi, g):
     e = h[m-g:, :m-g]
     b = h[:m - g, m:]
     t = h[:m-g, :m-g]
-    phi_inv = np.linalg.inv(phi)
-    t_inv = np.linalg.inv(t)
+    phi_inv = np.linalg.inv(phi)  # todo in gf2
+    t_inv = np.linalg.inv(t)  # todo in gf2
     dst = d @ np.transpose(s)
     etbst = (e @ (t_inv @  (b @ np.transpose(s))))
     return - phi_inv @ (dst - etbst)
