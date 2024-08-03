@@ -13,7 +13,7 @@ def calculate_failed_parity_checks(h_alist, n, s):
     alist_offset = 4
     for i in range(n):
         for j in h_alist[i + alist_offset]:
-            if j == 0:
+            if j == 0:  # values are right padded with zeros
                 break
             else:
                 if s[j - 1] == 1:
@@ -33,7 +33,7 @@ def decode(h, h_alist, received_msg):
     m, n = np.shape(h)
 
     # max_num_of_iteration and flipping_thresholds may be different for every code
-    max_num_of_iteration = 100
+    max_num_of_iteration = 1000
     flipping_thresholds = calculate_flipping_thresholds(h)
 
     iteration = 0
