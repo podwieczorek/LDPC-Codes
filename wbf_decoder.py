@@ -37,7 +37,6 @@ def calculate_weighted_failed_parity_checks(h, s, weights):
 def decode(h, h_alist, message):
     # max_num_of_iteration may be different for every code
     max_num_of_iterations = 100
-    m, n = np.shape(h)
     message_hd, message_sd = message
     weights = calculate_weights(h, h_alist, message_sd)
 

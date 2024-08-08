@@ -1,7 +1,5 @@
 import numpy as np
 
-# todo test and make it more efficient
-
 
 def init_llr(m, n, message_sd, value_nodes_indices):
     llr = np.zeros((m, n))
@@ -53,6 +51,7 @@ def calculate_sum_vector(llr, column_indices_to_check, message_sd):
     return sum_vector
 
 
+# "vertical step"
 def perform_column_operations(sum_vector, column_indices_to_check, llr):
     for i, column in enumerate(column_indices_to_check):
         for index in column:
@@ -61,6 +60,7 @@ def perform_column_operations(sum_vector, column_indices_to_check, llr):
             llr[index-1][i] = sum_vector[i] - llr[index-1][i]
 
 
+# "horizontal step"
 def perform_row_operations(llr, check_nodes_indices):
     for i, row in enumerate(llr):
         min_val1, min_val2, min_index = find_min(row, check_nodes_indices[i])
@@ -75,7 +75,8 @@ def perform_row_operations(llr, check_nodes_indices):
 
 
 def decode(h, h_alist, message):
-    max_num_of_iterations = 15
+    # max_num_of_iteration may be different for every code
+    max_num_of_iterations = 100
     m, n = np.shape(h)
     message_hd, message_sd = message
     llr = init_llr(m, n, message_sd, h_alist[4:4+n])
@@ -83,9 +84,8 @@ def decode(h, h_alist, message):
     iterations = 0
     decoded_message = np.copy(message_hd)
     while iterations < max_num_of_iterations:
-        # calculate syndrome
+        # calculate syndrome, if it is a zero vector, the message was decoded successfully
         s = (decoded_message @ np.transpose(h)) % 2
-        # message decoded successfully
         if not s.any():
             break
 
@@ -95,5 +95,4 @@ def decode(h, h_alist, message):
         decoded_message = (sum_vector > 0).astype(int)
 
         iterations += 1
-
     return decoded_message

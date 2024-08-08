@@ -37,6 +37,7 @@ def create_generator_matrix(h, k):
 
 def encode(h, k, message):
     gauss_jordan_elimination(h, k)
+    print(h)
     g = create_generator_matrix(h, k)
-    codeword = np.dot(np.transpose(message), g) % 2
+    codeword = (np.transpose(message) @ g) % 2
     return codeword
