@@ -2,12 +2,14 @@
 Basic (but not very efficient) encoding method for linear codes, performed in 3 steps:
 1. Convert parity check matrix H into reduced row echelon form by Gauss Jordan elimination
 2. Create generator matrix G=[I P^T] from  H=[P I]
-3. Multiply transposed message vector by generator matrix G to obtain codeword
+3. Multiply message by generator matrix G to obtain codeword
 
 Note:
     Not every parity check matrix can be converted into reduced row echelon form just by row operations.
     In that case column permutations are needed. Column permutation will result in different code.
     Resulting code will be different, but (by some definitions) equivalent or "permutation equivalent"
+Note 2:
+    This encoding method involves row addition and may not preserve the matrix sparseness
 """
 
 
@@ -15,7 +17,7 @@ import warnings
 import numpy as np
 
 
-# after column swaps, the code changes, so we need to keep track of them, in order to properly decode
+# after column swaps, the code changes. We need to keep track of the swaps, in order to properly decode messages
 # todo refactor to get rid of the global variable
 column_swaps = []
 
@@ -33,7 +35,7 @@ def swap_columns(h, column_to_swap_index, pivot_position):
             if element == 1:
                 # column permutations change one code to different one (!)
                 # but this two codes are 'equivalent' by some definitions
-                warnings.warn("Column permutation, code changed!")
+                warnings.warn("Column permutation, code changes!")
                 h[:, [column_index, column_to_swap_index]] = h[:, [column_to_swap_index, column_index]]
                 column_swaps.append([column_index, column_to_swap_index])
                 return
@@ -98,5 +100,5 @@ def encode(h, h_alist, k, message):
     gauss_jordan_elimination(h, k)
     g = create_generator_matrix(h, k)
     swap_columns_alist(h_alist, k)
-    codeword = (np.transpose(message) @ g) % 2
+    codeword = (message @ g) % 2
     return codeword
