@@ -1,127 +1,116 @@
 import numpy as np
 
-# todo make it a class
 
+class RuEncoder:
+    def __init__(self, h, h_alist):
+        self.h = h
+        self.h_alist = h_alist
+        self.m, self.n = np.shape(h)
+        self.k = self.n = self.m
+        self.phi = None
+        self.g = None
+        self.swaps = None
 
-def calculate_phi(h, g):
-    m = np.shape(h)[0]
-    a = h[:m - g, m - g:m]
-    c = h[m-g:, m-g:m]
-    e = h[m - g:, :m - g]
-    t_inv = np.linalg.inv(h[:m-g, :m-g])  # todo in gf2
-    eta = e @ (t_inv @ a)
-    print(eta)
-    return c - eta
+    def preprocess(self):
+        # function transforms h into approximate upper triangular form and returns gap g
+        self.g = self._approximate_upper_triangulation()
+        # if gap is 0, calculating phi is not needed
+        if self.g != 0:
+            self.phi = self._calculate_phi()
 
+    def _approximate_upper_triangulation(self):
+        t = 0
+        g = 0
+        while True:
+            if t == self.m - g:
+                return g
+            # find minimum residual degree and columns with that degree
+            min_res_degree, columns = self._minimum_residual_degree(t)
+            chosen_column_index = np.random.randint(0, columns.size, dtype=int)
+            random_column = columns[chosen_column_index]
+            if min_res_degree == 1:
+                self._extend(random_column, t)
+            else:
+                g += self._choose(random_column, t)
+            t += 1
 
-def minimum_residual_degree(h, t, g):
-    m, n = np.shape(h)
-    residual_h = h[t:m - g, t:n]
-    column_sums = np.sum(residual_h, axis=0)
-    column_sums[column_sums == 0] = np.iinfo(np.int32).max
-    min_nonzero_weight = np.min(column_sums)
-    columns_with_min_weight = np.where(column_sums == min_nonzero_weight)[0] + t
-    return min_nonzero_weight, columns_with_min_weight
+    # todo, extend() and choose() are similar
+    def _extend(self, column_to_swap, t):
+        # swap columns
+        self.h[:, [t, column_to_swap]] = self.h[:, [column_to_swap, t]]
+        # todo add to swaps
+        # find row with 1 in residual parity check matrix
+        sub_array = self.h[t:self.m - self.g, t]
+        row_to_swap = np.where(sub_array == 1)[0][0] + t
+        # swap rows
+        self.h[[t, row_to_swap], :] = self.h[[row_to_swap, t], :]
 
+    def _choose(self, column_to_swap, t):
+        # swap columns
+        self.h[:, [t, column_to_swap]] = self.h[:, [column_to_swap, t]]
+        # todo add to swaps
+        # find rows with 1 in residual parity check matrix
+        sub_array = self.h[t:self.m - self.g, t]
+        row_indices = np.where(sub_array == 1)[0] + t
+        # swap first row
+        first_row_to_swap = int(row_indices[0])
+        self.h[[t, first_row_to_swap], :] = self.h[[first_row_to_swap, t], :]
 
-# todo, extend() and choose() are almost the same, clean up
-def extend(h, column_to_swap, t, g):
-    m, n = np.shape(h)
-    # swap columns
-    h[:, [t, column_to_swap]] = h[:, [column_to_swap, t]]
-    # find row with 1 in residual parity check matrix
-    sub_array = h[t:m - g, t]
-    row_to_swap = np.where(sub_array == 1)[0][0] + t
-    # swap rows
-    h[[t, row_to_swap], :] = h[[row_to_swap, t], :]
+        # move other rows with 1 at the end of the h matrix
+        rows_to_move = []
+        for row_index in row_indices[-1:0:-1]:
+            if rows_to_move == []:
+                rows_to_move = self.h[row_index]
+            else:
+                rows_to_move = np.vstack((rows_to_move, self.h[row_index]))
+            self.h = np.delete(self.h, row_index, axis=0)
 
+        rows_to_move = np.reshape(rows_to_move, (row_indices.size - 1, self.n))
+        np.concatenate((self.h, rows_to_move), axis=0)
 
-def choose(h, column_to_swap, t, g):
-    m, n = np.shape(h)
-    # swap columns
-    h[:, [t, column_to_swap]] = h[:, [column_to_swap, t]]
-    # find rows with 1 in residual parity check matrix
-    sub_array = h[t:m-g, t]
-    row_indices = np.where(sub_array == 1)[0] + t
+        return row_indices.size - 1
 
-    # swap first row
-    first_row_to_swap = int(row_indices[0])
-    h[[t, first_row_to_swap], :] = h[[first_row_to_swap, t], :]
+    def _minimum_residual_degree(self, t):
+        residual_h = self.h[t:self.m - self.g, t:self.n]
+        column_sums = np.sum(residual_h, axis=0)
+        column_sums[column_sums == 0] = np.iinfo(np.int32).max
+        min_nonzero_weight = np.min(column_sums)
+        columns_with_min_weight = np.where(column_sums == min_nonzero_weight)[0] + t
+        return min_nonzero_weight, columns_with_min_weight
 
-    # move other rows with 1 at the end of the h matrix
-    rows_to_move = []
-    for row_index in row_indices[-1:0:-1]:
-        if rows_to_move == []:
-            rows_to_move = h[row_index]
-        else:
-            rows_to_move = np.vstack((rows_to_move, h[row_index]))
-        h = np.delete(h, row_index, axis=0)
+    # todo check if phi is singular
+    def _calculate_phi(self):
+        a = self.h[:self.m - self.g, self.m - self.g:self.m]
+        c = self.h[self.m - self.g:, self.m - self.g:self.m]
+        e = self.h[self.m - self.g:, :self.m - self.g]
+        t_inv = np.linalg.inv(self.h[:self.m - self.g, :self.m - self.g])  # todo in gf2
+        eta = e @ (t_inv @ a)
+        return c - eta
 
-    rows_to_move = np.reshape(rows_to_move, (row_indices.size-1, n))
-    np.concatenate((h, rows_to_move), axis=0)
+    # todo check if gap is 0
+    def encode(self, message):
+        p2 = self._calculate_p2(message)
+        p1 = self._calculate_p1(message, p2)
+        # todo swap columns h and h_alist
+        return np.concatenate((p1, p2, message), axis=None)
 
-    return row_indices.size - 1
+    def _calculate_p1(self, s, p2):
+        a = self.h[:self.m - self.g, self.m - self.g:self.m]
+        b = self.h[:self.m - self.g, self.m:]
+        t = self.h[:self.m - self.g, :self.m - self.g]
+        t_inv = np.linalg.inv(t)
+        ap2t = a @ np.transpose(p2)
+        bst = b @ np.transpose(s)
 
+        return - t_inv @ (ap2t + bst)
 
-def approximate_upper_triangulation(h):
-    m, n = np.shape(h)
-    t = 0
-    g = 0
-    while True:
-        if t == m - g:
-            return h, g
-        # find minimum residual degree and columns with that degree
-        min_res_degree, columns = minimum_residual_degree(h, t, g)
-        chosen_column_index = np.random.randint(0, columns.size, dtype=int)
-        random_column = columns[chosen_column_index]
-        if min_res_degree == 1:
-            extend(h, random_column, t, g)
-        else:
-            # todo
-            g += choose(h, random_column, t, g)
-        t += 1
-
-
-# input: parity check matrix h
-# output: equivalent parity check matrix in approximate upper-triangular form
-#         and precalculated phi
-def preprocess(h):
-    # parity check matrix h in approximate upper-triangular form and gap g
-    h_aut, g = approximate_upper_triangulation(h)
-    # if gap is 0, calculating phi is not needed
-    if g == 0:
-        return h, g, []
-    else:
-        phi = calculate_phi(h_aut, g)
-        return h, g, phi
-
-
-def calculate_p1(h, s, p2, g):
-    m, n = np.shape(h)
-    a = h[:m-g, m-g:m]
-    b = h[:m-g, m:]
-    t = h[:m-g, :m-g]
-    t_inv = np.linalg.inv(t)
-    ap2t = a @ np.transpose(p2)
-    bst = b @ np.transpose(s)
-
-    return - t_inv @ (ap2t + bst)
-
-
-def calculate_p2(h, s, phi, g):
-    m, n = np.shape(h)
-    d = h[m-g:, m:]
-    e = h[m-g:, :m-g]
-    b = h[:m - g, m:]
-    t = h[:m-g, :m-g]
-    phi_inv = np.linalg.inv(phi)  # todo in gf2
-    t_inv = np.linalg.inv(t)  # todo in gf2
-    dst = d @ np.transpose(s)
-    etbst = (e @ (t_inv @  (b @ np.transpose(s))))
-    return - phi_inv @ (dst - etbst)
-
-
-def encode(h, s, phi, g):
-    p2 = calculate_p2(h, s, phi, g)
-    p1 = calculate_p1(h, s, p2, g)
-    return np.concatenate((p1, p2, s), axis=None)
+    def _calculate_p2(self, s):
+        d = self.h[self.m - self.g:, self.m:]
+        e = self.h[self.m - self.g:, :self.m - self.g]
+        b = self.h[:self.m - self.g, self.m:]
+        t = self.h[:self.m - self.g, :self.m - self.g]
+        phi_inv = np.linalg.inv(self.phi)  # todo in gf2
+        t_inv = np.linalg.inv(t)  # todo in gf2
+        dst = d @ np.transpose(s)
+        etbst = (e @ (t_inv @ (b @ np.transpose(s))))
+        return - phi_inv @ (dst - etbst)
