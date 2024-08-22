@@ -1,4 +1,29 @@
+import warnings
+
 import numpy as np
+
+
+# todo GJ elimination almost the same as in encoder
+def invert_matrix(matrix):
+    n = matrix.shape[0]
+    matrix = matrix % 2
+    augmented_matrix = np.concatenate((matrix, np.identity(n, dtype=int)), axis=1)
+
+    for i in range(n):
+        if augmented_matrix[i, i] == 0:
+            for j in range(i + 1, n):
+                if augmented_matrix[j, i] == 1:
+                    augmented_matrix[[i, j]] = augmented_matrix[[j, i]]
+                    break
+        if augmented_matrix[i, i] == 0:
+            warnings.warn('Matrix is singular!')
+            return None
+
+        augmented_matrix[i] = augmented_matrix[i] % 2
+        for j in range(n):
+            if j != i and augmented_matrix[j, i] == 1:
+                augmented_matrix[j] = (augmented_matrix[j] + augmented_matrix[i]) % 2
+    return augmented_matrix[:, n:]
 
 
 class RuEncoder:
@@ -8,15 +33,27 @@ class RuEncoder:
         self.m, self.n = np.shape(h)
         self.k = self.n = self.m
         self.phi = None
+        self.phi_inv = None
         self.g = None
         self.swaps = None
+        self.t_inv = None
 
     def preprocess(self):
         # function transforms h into approximate upper triangular form and returns gap g
         self.g = self._approximate_upper_triangulation()
+        self._invert_t()  # initialize t_inv
+
         # if gap is 0, calculating phi is not needed
         if self.g != 0:
             self.phi = self._calculate_phi()
+            self.phi_inv = invert_matrix(self.phi)
+            if self.phi_inv is None:
+                # todo handle by column permutations
+                raise ValueError("Phi is singular!")
+
+    def _invert_t(self):
+        t = self.h[:self.m - self.g, :self.m - self.g]
+        self.t_inv = invert_matrix(t)
 
     def _approximate_upper_triangulation(self):
         t = 0
@@ -38,7 +75,7 @@ class RuEncoder:
     def _extend(self, column_to_swap, t):
         # swap columns
         self.h[:, [t, column_to_swap]] = self.h[:, [column_to_swap, t]]
-        # todo add to swaps
+        self.swaps.append((t, column_to_swap))
         # find row with 1 in residual parity check matrix
         sub_array = self.h[t:self.m - self.g, t]
         row_to_swap = np.where(sub_array == 1)[0][0] + t
@@ -48,7 +85,7 @@ class RuEncoder:
     def _choose(self, column_to_swap, t):
         # swap columns
         self.h[:, [t, column_to_swap]] = self.h[:, [column_to_swap, t]]
-        # todo add to swaps
+        self.swaps.append((t, column_to_swap))
         # find rows with 1 in residual parity check matrix
         sub_array = self.h[t:self.m - self.g, t]
         row_indices = np.where(sub_array == 1)[0] + t
@@ -78,14 +115,12 @@ class RuEncoder:
         columns_with_min_weight = np.where(column_sums == min_nonzero_weight)[0] + t
         return min_nonzero_weight, columns_with_min_weight
 
-    # todo check if phi is singular
     def _calculate_phi(self):
         a = self.h[:self.m - self.g, self.m - self.g:self.m]
         c = self.h[self.m - self.g:, self.m - self.g:self.m]
         e = self.h[self.m - self.g:, :self.m - self.g]
-        t_inv = np.linalg.inv(self.h[:self.m - self.g, :self.m - self.g])  # todo in gf2
-        eta = e @ (t_inv @ a)
-        return c - eta
+        eta = (e @ (self.t_inv @ a) % 2) % 2
+        return (c + eta) % 2
 
     # todo check if gap is 0
     def encode(self, message):
@@ -97,20 +132,14 @@ class RuEncoder:
     def _calculate_p1(self, s, p2):
         a = self.h[:self.m - self.g, self.m - self.g:self.m]
         b = self.h[:self.m - self.g, self.m:]
-        t = self.h[:self.m - self.g, :self.m - self.g]
-        t_inv = np.linalg.inv(t)
-        ap2t = a @ np.transpose(p2)
-        bst = b @ np.transpose(s)
-
-        return - t_inv @ (ap2t + bst)
+        ap2t = a @ np.transpose(p2) % 2
+        bst = b @ np.transpose(s) % 2
+        return (self.t_inv @ ((ap2t + bst) % 2)) % 2
 
     def _calculate_p2(self, s):
         d = self.h[self.m - self.g:, self.m:]
         e = self.h[self.m - self.g:, :self.m - self.g]
         b = self.h[:self.m - self.g, self.m:]
-        t = self.h[:self.m - self.g, :self.m - self.g]
-        phi_inv = np.linalg.inv(self.phi)  # todo in gf2
-        t_inv = np.linalg.inv(t)  # todo in gf2
-        dst = d @ np.transpose(s)
-        etbst = (e @ (t_inv @ (b @ np.transpose(s))))
-        return - phi_inv @ (dst - etbst)
+        dst = d @ np.transpose(s) % 2
+        etbst = (e @ (self.t_inv @ (b @ np.transpose(s))))
+        return (self.phi_inv @ ((dst - etbst) % 2)) % 2

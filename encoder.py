@@ -60,9 +60,7 @@ def gauss_jordan_elimination(h, k):
 
         # all elements above and below pivot should be 0
         for ri in range(m):
-            if ri == i:
-                continue
-            if h[ri][j] == 1:
+            if ri != i and h[ri][j] == 1:
                 h[ri] = (h[ri] + h[i]) % 2
         i += 1
         j += 1
