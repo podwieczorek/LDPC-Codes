@@ -35,7 +35,7 @@ class RuEncoder:
         self.phi = None
         self.phi_inv = None
         self.g = None
-        self.swaps = None
+        self.swaps = []
         self.t_inv = None
 
     def preprocess(self):
@@ -62,32 +62,31 @@ class RuEncoder:
             if t == self.m - g:
                 return g
             # find minimum residual degree and columns with that degree
-            min_res_degree, columns = self._minimum_residual_degree(t)
+            min_res_degree, columns = self._minimum_residual_degree(t, g)
             chosen_column_index = np.random.randint(0, columns.size, dtype=int)
             random_column = columns[chosen_column_index]
             if min_res_degree == 1:
-                self._extend(random_column, t)
+                self._extend(random_column, t, g)
             else:
-                g += self._choose(random_column, t)
+                g += self._choose(random_column, t, g)
             t += 1
 
-    # todo, extend() and choose() are similar
-    def _extend(self, column_to_swap, t):
+    def _extend(self, column_to_swap, t, g):
         # swap columns
         self.h[:, [t, column_to_swap]] = self.h[:, [column_to_swap, t]]
         self.swaps.append((t, column_to_swap))
         # find row with 1 in residual parity check matrix
-        sub_array = self.h[t:self.m - self.g, t]
+        sub_array = self.h[t:self.m - g, t]
         row_to_swap = np.where(sub_array == 1)[0][0] + t
         # swap rows
         self.h[[t, row_to_swap], :] = self.h[[row_to_swap, t], :]
 
-    def _choose(self, column_to_swap, t):
+    def _choose(self, column_to_swap, t, g):
         # swap columns
         self.h[:, [t, column_to_swap]] = self.h[:, [column_to_swap, t]]
         self.swaps.append((t, column_to_swap))
         # find rows with 1 in residual parity check matrix
-        sub_array = self.h[t:self.m - self.g, t]
+        sub_array = self.h[t:self.m - g, t]
         row_indices = np.where(sub_array == 1)[0] + t
         # swap first row
         first_row_to_swap = int(row_indices[0])
@@ -107,8 +106,8 @@ class RuEncoder:
 
         return row_indices.size - 1
 
-    def _minimum_residual_degree(self, t):
-        residual_h = self.h[t:self.m - self.g, t:self.n]
+    def _minimum_residual_degree(self, t, g):
+        residual_h = self.h[t:self.m - g, t:self.n]
         column_sums = np.sum(residual_h, axis=0)
         column_sums[column_sums == 0] = np.iinfo(np.int32).max
         min_nonzero_weight = np.min(column_sums)
@@ -122,18 +121,24 @@ class RuEncoder:
         eta = (e @ (self.t_inv @ a) % 2) % 2
         return (c + eta) % 2
 
-    # todo check if gap is 0
     def encode(self, message):
+        if self.g == 0:
+            p1 = self._calculate_p1(message, None)
+            return np.concatenate((p1, message), axis=None)
         p2 = self._calculate_p2(message)
         p1 = self._calculate_p1(message, p2)
-        # todo swap columns h and h_alist
+        print(self.swaps)
         return np.concatenate((p1, p2, message), axis=None)
 
     def _calculate_p1(self, s, p2):
-        a = self.h[:self.m - self.g, self.m - self.g:self.m]
         b = self.h[:self.m - self.g, self.m:]
-        ap2t = a @ np.transpose(p2) % 2
         bst = b @ np.transpose(s) % 2
+
+        if p2 is None:
+            return (self.t_inv @ bst) % 2
+
+        a = self.h[:self.m - self.g, self.m - self.g:self.m]
+        ap2t = a @ np.transpose(p2) % 2
         return (self.t_inv @ ((ap2t + bst) % 2)) % 2
 
     def _calculate_p2(self, s):
