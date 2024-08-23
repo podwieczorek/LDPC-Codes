@@ -17,86 +17,88 @@ import warnings
 import numpy as np
 
 
-# after column swaps, the code changes. We need to keep track of the swaps, in order to properly decode messages
-# todo refactor to get rid of the global variable
-column_swaps = []
+class Encoder:
+    def __init__(self, h, h_alist):
+        self.h = h
+        self.h_alist = h_alist
+        self.m, self.n = np.shape(h)
+        self.k = self.n - self.m
+        self.column_swaps = []
+        self.g = None
 
+    def preprocess(self):
+        self.column_swaps.clear()
+        self._gauss_jordan_elimination()
+        self.g = self._create_generator_matrix()
+        print(self.column_swaps)
+        print(self.h)
+        self._swap_columns_alist()
 
-def find_non_zero_element_below(h, pivot_position, column_index):
-    for element_index, element in enumerate(h.T[column_index][pivot_position:]):
-        if element == 1:
-            return pivot_position + element_index
-    return None
+    def encode(self, message):
+        codeword = (message @ self.g) % 2
+        return codeword
 
-
-def swap_columns(h, column_to_swap_index, pivot_position):
-    for column_index, column in enumerate(h.T):
-        for element in column[pivot_position:]:
+    def _find_non_zero_element_below(self, pivot_position, column_index):
+        for element_index, element in enumerate(self.h.T[column_index][pivot_position:]):
             if element == 1:
-                # column permutations change one code to different one (!)
-                # but this two codes are 'equivalent' by some definitions
-                warnings.warn("Column permutation, code changes!")
-                h[:, [column_index, column_to_swap_index]] = h[:, [column_to_swap_index, column_index]]
-                column_swaps.append([column_index, column_to_swap_index])
-                return
+                return pivot_position + element_index
+        return None
 
+    def _swap_columns(self, column_to_swap_index, pivot_position):
+        for column_index, column in enumerate(self.h.T):
+            for element in column[pivot_position:]:
+                if element == 1:
+                    # column permutations change one code to different one (!)
+                    # but this two codes are 'equivalent' by some definitions
+                    warnings.warn("Column permutation, code changes!")
+                    self.h[:, [column_index, column_to_swap_index]] = self.h[:, [column_to_swap_index, column_index]]
+                    self.column_swaps.append([column_index, column_to_swap_index])
+                    return
 
-def gauss_jordan_elimination(h, k):
-    m, n = np.shape(h)
-    # initialize pivot
-    i = 0
-    j = k
-    while i < m and j < n:
-        # if pivot is 0 and there are only 0s beneath it, we have to swap columns
-        if h[i][j] == 0 and find_non_zero_element_below(h, i, j) is None:
-            swap_columns(h, j, i)
+    def _gauss_jordan_elimination(self):
+        # initialize pivot
+        i = 0
+        j = self.k
+        while i < self.m and j < self.n:
+            # if pivot is 0 and there are only 0s beneath it, we have to swap columns
+            if self.h[i][j] == 0 and self._find_non_zero_element_below(i, j) is None:
+                self._swap_columns(j, i)
 
-        # if pivot is zero we need to swap the rows
-        if h[i][j] == 0:
-            i1 = find_non_zero_element_below(h, i, j)
-            if i1 is None:
-                return
-            h[[i, i1]] = h[[i1, i]]
+            # if pivot is zero we need to swap the rows
+            if self.h[i][j] == 0:
+                i1 = self._find_non_zero_element_below(i, j)
+                if i1 is None:
+                    return
+                self.h[[i, i1]] = self.h[[i1, i]]
 
-        # all elements above and below pivot should be 0
-        for ri in range(m):
-            if ri != i and h[ri][j] == 1:
-                h[ri] = (h[ri] + h[i]) % 2
-        i += 1
-        j += 1
+            # all elements above and below pivot should be 0
+            for ri in range(self.m):
+                if ri != i and self.h[ri][j] == 1:
+                    self.h[ri] = (self.h[ri] + self.h[i]) % 2
+            i += 1
+            j += 1
 
+    def _create_generator_matrix(self):
+        g = np.identity(self.k, dtype=int)
+        p = self.h[:, :self.k]
+        return np.concatenate((g, np.transpose(p)), axis=1)
 
-def create_generator_matrix(h, k):
-    g = np.identity(k, dtype=int)
-    p = h[:, :k]
-    return np.concatenate((g, np.transpose(p)), axis=1)
+    def _swap_columns_alist(self):
+        alist_offset = 4
+        for swap in self.column_swaps:
+            index1, index2 = swap
 
+            # step 1: "swapping" columns in variable nodes
+            temp = self.h_alist[index1 + alist_offset]
+            self.h_alist[index1 + alist_offset] = self.h_alist[index2 + alist_offset]
+            self.h_alist[index2 + alist_offset] = temp
 
-def swap_columns_alist(h_alist, k):
-    alist_offset = 4
-    for swap in column_swaps:
-        index1, index2 = swap
-
-        # step 1: "swapping" columns in variable nodes
-        temp = h_alist[index1 + alist_offset]
-        h_alist[index1 + alist_offset] = h_alist[index2 + alist_offset]
-        h_alist[index2 + alist_offset] = temp
-
-        # step 2: "swapping" columns in check nodes
-        index1 += 1  # alist format uses 1-based indexing
-        index2 += 1
-        for check_nodes_indices in h_alist[alist_offset+k:]:
-            for i in range(len(check_nodes_indices)):
-                if check_nodes_indices[i] == index1:
-                    check_nodes_indices[i] = index2
-                elif check_nodes_indices[i] == index2:
-                    check_nodes_indices[i] = index1
-
-
-def encode(h, h_alist, k, message):
-    column_swaps.clear()
-    gauss_jordan_elimination(h, k)
-    g = create_generator_matrix(h, k)
-    swap_columns_alist(h_alist, k)
-    codeword = (message @ g) % 2
-    return codeword
+            # step 2: "swapping" columns in check nodes
+            index1 += 1  # alist format uses 1-based indexing
+            index2 += 1
+            for check_nodes_indices in self.h_alist[alist_offset + self.k:]:
+                for i in range(len(check_nodes_indices)):
+                    if check_nodes_indices[i] == index1:
+                        check_nodes_indices[i] = index2
+                    elif check_nodes_indices[i] == index2:
+                        check_nodes_indices[i] = index1
