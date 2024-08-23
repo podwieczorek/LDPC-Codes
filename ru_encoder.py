@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 
 
-# todo GJ elimination almost the same as in encoder
+# todo GJ elimination almost the same as in encoder, to refactor
 def invert_matrix(matrix):
     n = matrix.shape[0]
     matrix = matrix % 2
@@ -42,6 +42,7 @@ class RuEncoder:
         # function transforms h into approximate upper triangular form and returns gap g
         self.g = self._approximate_upper_triangulation()
         self._invert_t()  # initialize t_inv
+        self._swap_columns_alist()
 
         # if gap is 0, calculating phi is not needed
         if self.g != 0:
@@ -127,7 +128,6 @@ class RuEncoder:
             return np.concatenate((p1, message), axis=None)
         p2 = self._calculate_p2(message)
         p1 = self._calculate_p1(message, p2)
-        print(self.swaps)
         return np.concatenate((p1, p2, message), axis=None)
 
     def _calculate_p1(self, s, p2):
@@ -148,3 +148,24 @@ class RuEncoder:
         dst = d @ np.transpose(s) % 2
         etbst = (e @ (self.t_inv @ (b @ np.transpose(s))))
         return (self.phi_inv @ ((dst - etbst) % 2)) % 2
+
+    # todo same as in the other encoder, to refactor
+    def _swap_columns_alist(self):
+        alist_offset = 4
+        for swap in self.column_swaps:
+            index1, index2 = swap
+
+            # step 1: "swapping" columns in variable nodes
+            temp = self.h_alist[index1 + alist_offset]
+            self.h_alist[index1 + alist_offset] = self.h_alist[index2 + alist_offset]
+            self.h_alist[index2 + alist_offset] = temp
+
+            # step 2: "swapping" columns in check nodes
+            index1 += 1  # alist format uses 1-based indexing
+            index2 += 1
+            for check_nodes_indices in self.h_alist[alist_offset + self.n:]:
+                for i in range(len(check_nodes_indices)):
+                    if check_nodes_indices[i] == index1:
+                        check_nodes_indices[i] = index2
+                    elif check_nodes_indices[i] == index2:
+                        check_nodes_indices[i] = index1

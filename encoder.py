@@ -30,8 +30,6 @@ class Encoder:
         self.column_swaps.clear()
         self._gauss_jordan_elimination()
         self.g = self._create_generator_matrix()
-        print(self.column_swaps)
-        print(self.h)
         self._swap_columns_alist()
 
     def encode(self, message):
@@ -96,7 +94,7 @@ class Encoder:
             # step 2: "swapping" columns in check nodes
             index1 += 1  # alist format uses 1-based indexing
             index2 += 1
-            for check_nodes_indices in self.h_alist[alist_offset + self.k:]:
+            for check_nodes_indices in self.h_alist[alist_offset + self.n:]:
                 for i in range(len(check_nodes_indices)):
                     if check_nodes_indices[i] == index1:
                         check_nodes_indices[i] = index2

@@ -23,19 +23,18 @@ def get_h_alist(file_path):
 
 
 if __name__ == "__main__":
-    h_alist = get_h_alist('h_matrices/BCH_127_78_7_strip.alist')
-    h_txt = 'h_matrices/BCH_127_78_7_strip.txt'
+    h_alist = get_h_alist('h_matrices/BCH_7_4_1_strip.alist')
+    h_txt = 'h_matrices/BCH_7_4_1_strip.txt'
     h = np.loadtxt(h_txt, dtype=int)
     n = np.shape(h)[1]
     k = n - np.shape(h)[0]
     eb_n0_range = [i for i in range(10)]
-    messages = 50
+    messages = 100
     result_ber = dict()
     result_fer = dict()
 
     encoder = Encoder(h, h_alist)
     encoder.preprocess()
-    print(h)
 
     for eb_n0 in eb_n0_range:
         ber = 0
