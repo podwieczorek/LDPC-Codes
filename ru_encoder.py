@@ -152,7 +152,7 @@ class RuEncoder:
     # todo same as in the other encoder, to refactor
     def _swap_columns_alist(self):
         alist_offset = 4
-        for swap in self.column_swaps:
+        for swap in self.swaps:
             index1, index2 = swap
 
             # step 1: "swapping" columns in variable nodes
