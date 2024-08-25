@@ -5,6 +5,7 @@ import os
 
 import channels.awgn_bpsk
 from ru_encoder import RuEncoder
+from bs_encoder import BsEncoder
 from encoder import Encoder
 from ms_decoder import decode
 
@@ -29,11 +30,11 @@ if __name__ == "__main__":
     n = np.shape(h)[1]
     k = n - np.shape(h)[0]
     eb_n0_range = [i/4 for i in range(25)]
-    messages = 1000
+    messages = 10
     result_ber = dict()
     result_fer = dict()
 
-    encoder = RuEncoder(h, h_alist)
+    encoder = BsEncoder(h, h_alist)
     encoder.preprocess()
 
     for eb_n0 in eb_n0_range:

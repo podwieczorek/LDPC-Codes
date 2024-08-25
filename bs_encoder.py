@@ -1,3 +1,13 @@
+"""
+Back substitution encoder, "probably the most straightforward way of constructing an encoder"
+Before encoding, we need to bring H into upper triangular form by Gauss-Jordan elimination.
+Note that this procedure involves row addition and may not preserve the matrix sparseness
+
+Algorithm described in "Efficient Encoding of Low-Density Parity-Check Codes"
+Thomas J. Richardson and Rüdiger L. Urbanke
+"""
+
+
 import numpy as np
 import warnings
 
@@ -14,9 +24,10 @@ class BsEncoder:
     # note that after preprocessing, matrix is no longer sparse
     def preprocess(self):
         self._gauss_jordan_elimination()
-        self._handle_column_swaps()
+        self._handle_column_swaps()  # "swap" columns in h_alist
 
     def encode(self, message):
+        # back substitution
         p = np.zeros(self.m)
         for i in range(self.m-1, -1, -1):
             for j in range(i, self.m-1):
