@@ -14,8 +14,7 @@ def save_to_npz(graphs):
 # 1: if the node is a parity check node
 # 0: in other cases
 def get_attributes_data(h_alist):
-    n = h_alist[0][0]
-    m = h_alist[0][1]
+    m, n = get_shape(h_alist)
 
     variable_node_attributes = np.zeros(n, dtype=int)
     parity_check_node_attributes = np.ones(m, dtype=int)
@@ -28,7 +27,7 @@ def get_attributes_data(h_alist):
 # remove zero-padding and change to zero-based indexing
 def get_indices(h_alist):
     alist_offset = 4
-    n = h_alist[0][0]
+    _, n = get_shape(h_alist)
 
     variable_indices = np.array(h_alist[alist_offset:alist_offset+n])
     parity_check_indices = np.array(h_alist[alist_offset+n:])
@@ -72,6 +71,11 @@ def h_to_sparse(h_alist):
     return indices, indices_pointers
 
 
+def get_shape(h_alist):
+    # number of parity check nodes and variable nodes, respectively
+    return h_alist[0][1], h_alist[0][0]
+
+
 def main():
     data = dict()
     path = '../wimax_alist'
@@ -79,10 +83,13 @@ def main():
         h_alist = get_h_alist(alist_file)
         indices, indices_pointers = h_to_sparse(h_alist)
         attributes_data = get_attributes_data(h_alist)
+        m, n = get_shape(h_alist)
+        adj_shape = (m+n, m+n)
 
         graph = {'adj_indices': indices,
                  'adj_indptr': indices_pointers,
-                 'attr_data': attributes_data}
+                 'attr_data': attributes_data,
+                 'adj_shape': adj_shape}
         graph_name = alist_file.split('/')[-1][:-6]
 
         data[graph_name] = graph
