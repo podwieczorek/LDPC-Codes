@@ -1,14 +1,12 @@
+import glob
+import os
+
 import numpy as np
-
 from helper_functions import get_h_alist
-
-# saving multiple:
-# data = [np.arange(8).reshape(2, 4), np.arange(10).reshape(2, 5)]
-# np.savez('mat.npz', *data)
 
 
 def save_to_npz(graphs):
-    path = '../data/data_npz/test_file.npz'
+    path = '../data/data_npz/wimax_data.npz'
     np.savez(path, graphs)
 
 
@@ -75,13 +73,21 @@ def h_to_sparse(h_alist):
 
 
 def main():
-    h_alist = get_h_alist('../h_matrices/BCH_7_4_1_strip.alist')
-    indices, indices_pointers = h_to_sparse(h_alist)
-    attributes_data = get_attributes_data(h_alist)
-    graph = {'adj_indices': indices,
-             'adj_indptr': indices_pointers,
-             'attr_data': attributes_data}
-    save_to_npz(graph)
+    data = dict()
+    path = '../wimax_alist'
+    for alist_file in glob.glob(os.path.join(path, '*.alist')):
+        h_alist = get_h_alist(alist_file)
+        indices, indices_pointers = h_to_sparse(h_alist)
+        attributes_data = get_attributes_data(h_alist)
+
+        graph = {'adj_indices': indices,
+                 'adj_indptr': indices_pointers,
+                 'attr_data': attributes_data}
+        graph_name = alist_file.split('/')[-1][:-6]
+
+        data[graph_name] = graph
+
+    save_to_npz(data)
 
 
 if __name__ == "__main__":
