@@ -16,6 +16,8 @@ Note 2:
 import warnings
 import numpy as np
 
+import utils.helper_functions
+
 
 class Encoder:
     def __init__(self, h, h_alist):
@@ -30,7 +32,7 @@ class Encoder:
         self.column_swaps.clear()
         self._gauss_jordan_elimination()
         self.g = self._create_generator_matrix()
-        self._swap_columns_alist()
+        utils.helper_functions.swap_columns_h_alist(self.h_alist, self.column_swaps)
 
     def encode(self, message):
         codeword = (message @ self.g) % 2
@@ -80,23 +82,3 @@ class Encoder:
         g = np.identity(self.k, dtype=int)
         p = self.h[:, :self.k]
         return np.concatenate((g, np.transpose(p)), axis=1)
-
-    def _swap_columns_alist(self):
-        alist_offset = 4
-        for swap in self.column_swaps:
-            index1, index2 = swap
-
-            # step 1: "swapping" columns in variable nodes
-            temp = self.h_alist[index1 + alist_offset]
-            self.h_alist[index1 + alist_offset] = self.h_alist[index2 + alist_offset]
-            self.h_alist[index2 + alist_offset] = temp
-
-            # step 2: "swapping" columns in check nodes
-            index1 += 1  # alist format uses 1-based indexing
-            index2 += 1
-            for check_nodes_indices in self.h_alist[alist_offset + self.n:]:
-                for i in range(len(check_nodes_indices)):
-                    if check_nodes_indices[i] == index1:
-                        check_nodes_indices[i] = index2
-                    elif check_nodes_indices[i] == index2:
-                        check_nodes_indices[i] = index1

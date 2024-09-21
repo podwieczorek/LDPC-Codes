@@ -11,6 +11,8 @@ Thomas J. Richardson and Rüdiger L. Urbanke
 import numpy as np
 import warnings
 
+import utils.helper_functions
+
 
 class BsEncoder:
     def __init__(self, h, h_alist):
@@ -24,7 +26,7 @@ class BsEncoder:
     # note that after preprocessing, matrix is no longer sparse
     def preprocess(self):
         self._gauss_jordan_elimination()
-        self._handle_column_swaps()  # "swap" columns in h_alist
+        utils.helper_functions.swap_columns_h_alist(self.h_alist, self.swaps)
 
     def encode(self, message):
         # back substitution
@@ -76,24 +78,3 @@ class BsEncoder:
                     self.h[ri] = (self.h[ri] + self.h[i]) % 2
             i += 1
             j += 1
-
-    # in order to decode properly, we also need to "swap" columns in h_alist
-    def _handle_column_swaps(self):
-        alist_offset = 4
-        for swap in self.swaps:
-            index1, index2 = swap
-
-            # step 1: "swapping" columns in variable nodes
-            temp = self.h_alist[index1 + alist_offset]
-            self.h_alist[index1 + alist_offset] = self.h_alist[index2 + alist_offset]
-            self.h_alist[index2 + alist_offset] = temp
-
-            # step 2: "swapping" columns in check nodes
-            index1 += 1  # alist format uses 1-based indexing
-            index2 += 1
-            for check_nodes_indices in self.h_alist[alist_offset + self.n:]:
-                for i in range(len(check_nodes_indices)):
-                    if check_nodes_indices[i] == index1:
-                        check_nodes_indices[i] = index2
-                    elif check_nodes_indices[i] == index2:
-                        check_nodes_indices[i] = index1
