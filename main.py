@@ -11,7 +11,7 @@ from utils.helper_functions import get_h_alist
 
 
 if __name__ == "__main__":
-    h_alist = get_h_alist('test_h_matrices/BCH_127_78_7_strip.alist')
+    h_alist = get_h_alist('data/test_h_matrices/BCH_127_78_7_strip.alist')
     h_txt = 'test_h_matrices/BCH_127_78_7_strip.txt'
     h = np.loadtxt(h_txt, dtype=int)
     n = np.shape(h)[1]
