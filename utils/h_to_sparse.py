@@ -6,7 +6,7 @@ from helper_functions import get_h_alist
 
 
 def save_to_npz(graphs):
-    path = '../data/data_npz/wimax_data.npz'
+    path = '../data/data_npz/test_data.npz'
     np.savez(path, graphs)
 
 
@@ -78,7 +78,7 @@ def get_shape(h_alist):
 
 def main():
     data = dict()
-    path = '../wimax_alist'
+    path = '../data/test_h_matrices2'
     for alist_file in glob.glob(os.path.join(path, '*.alist')):
         h_alist = get_h_alist(alist_file)
         indices, indices_pointers = h_to_sparse(h_alist)
@@ -91,7 +91,6 @@ def main():
                  'attr_data': attributes_data,
                  'adj_shape': adj_shape}
         graph_name = alist_file.split('/')[-1][:-6]
-
         data[graph_name] = graph
 
     save_to_npz(data)
