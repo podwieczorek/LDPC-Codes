@@ -4,7 +4,7 @@ import warnings
 
 
 def convert_to_array(file, path):
-    file_path = os.path.join(path, 'converted_to_array.txt')
+    file_path = os.path.join(path, 'gap_array.txt')
     content = file.readlines()
     with open(file_path, 'w') as new_file:
         row_number = len(content)
@@ -20,7 +20,7 @@ def convert_to_array(file, path):
 
 def main():
     parser = argparse.ArgumentParser(description='Program converts parity check matrices in .txt format'
-                                                 'to array format that can be used in GAP')
+                                                 'to format that can be used in GAP')
     parser.add_argument('-p', '--path', help='Path to the .txt file', required=True)
     path = vars(parser.parse_args())['path']
 

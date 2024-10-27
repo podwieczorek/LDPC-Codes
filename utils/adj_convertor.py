@@ -8,7 +8,9 @@ def load_adjacency_matrix(file_path):
 
 
 def make_graph_bipartite(matrix, n):
+    print(f'Number of non-zero elements in generated matrix: {np.count_nonzero(matrix[:n, :n])} +', end=' ')
     matrix[:n, :n] = 0
+    print(f'{np.count_nonzero(matrix[n:, n:])} ')
     matrix[n:, n:] = 0
 
     matrix = matrix + matrix.T
@@ -19,6 +21,10 @@ def make_graph_bipartite(matrix, n):
 def create_h_txt(matrix, new_matrix_shape, file_path):
     n = new_matrix_shape[1]
     new_matrix = matrix[n:, :n]
+    new_matrix = new_matrix[~np.all(new_matrix == 0, axis=1)]
+    new_matrix = new_matrix[:, ~np.all(new_matrix == 0, axis=0)]
+    print(new_matrix.shape)
+
     new_file_path = file_path[:-4] + '_h.txt'
     np.savetxt(new_file_path, new_matrix, delimiter=' ', fmt='%d')
     return new_matrix
@@ -60,7 +66,7 @@ def visualize_graph(adj_matrix):
 
 
 if __name__ == "__main__":
-    file_path = '../generated_data/test1.txt'
+    file_path = '../generated_data/test2.txt'
     adj_matrix = load_adjacency_matrix(file_path)
 
     # todo use node attributes to differentiate between bit nodes and parity check nodes
@@ -68,10 +74,12 @@ if __name__ == "__main__":
     m = 64
     shape = (m, n)
 
-    make_bipartite = False
-    if make_bipartite:
+    # show graph before preprocessing
+    # visualize_graph(adj_matrix)
+
+    do_preprocess = True
+    if do_preprocess:
         make_graph_bipartite(adj_matrix, n)
 
     h_matrix = create_h_txt(adj_matrix, shape, file_path)
     create_h_alist(h_matrix, file_path)
-    # visualize_graph(adj_matrix)
