@@ -11,13 +11,14 @@ from utils.helper_functions import get_h_alist
 
 
 if __name__ == "__main__":
-    h_alist = get_h_alist('data/test_h_matrices/BCH_127_78_7_strip.alist')
-    h_txt = 'test_h_matrices/BCH_127_78_7_strip.txt'
+    h_alist = get_h_alist('generated_data/test2.alist')
+    h_txt = 'generated_data/test2_h.txt'
     h = np.loadtxt(h_txt, dtype=int)
+    # todo initialize n and m after preprocessing
     n = np.shape(h)[1]
     k = n - np.shape(h)[0]
     eb_n0_range = [i/4 for i in range(25)]
-    messages = 10
+    messages = 100
     result_ber = dict()
     result_fer = dict()
 
@@ -32,6 +33,7 @@ if __name__ == "__main__":
             message = np.random.randint(low=0, high=2, size=k)
             encoded_message = encoder.encode(message)
             received_message = channels.awgn_bpsk.transmit(encoded_message, eb_n0)
+            # todo use correct h to decode!
             decoded_message = decode(h, h_alist, received_message)
 
             bit_errors = np.count_nonzero(encoded_message != decoded_message)

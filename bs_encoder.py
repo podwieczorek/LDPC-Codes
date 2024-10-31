@@ -27,8 +27,11 @@ class BsEncoder:
     # note that after preprocessing, matrix is no longer sparse
     def preprocess(self):
         self._gauss_jordan_elimination()
-        utils.helper_functions.swap_columns_h_alist(self.h_alist, self.swaps)
-        # utils.helper_functions.remove_columns_h_alist(self.h_alist, self.removes)
+        if len(self.swaps) > 0:
+            utils.helper_functions.swap_columns_h_alist(self.h_alist, self.swaps)
+        if len(self.removes) > 0:
+            utils.helper_functions.remove_columns_h_alist(self.h_alist, self.h, self.removes)
+            print(f'To bring H matrix into upper triangular form, {len(self.removes)} column(s) was/were removed!')
 
     def encode(self, message):
         # back substitution
@@ -46,6 +49,10 @@ class BsEncoder:
             if element == 1:
                 return pivot_position + element_index
         return None
+
+    def _too_many_columns_removed(self):
+        num_of_removed_columns = len(self.removes)
+        return num_of_removed_columns >= self.k
 
     # todo check - looks suspicious
     def _swap_columns(self, column_to_swap_index, pivot_position):
@@ -65,10 +72,12 @@ class BsEncoder:
         i = 0
         j = 0
         while i < self.m and j < self.m:
-            # if pivot is 0 and there are only 0s beneath it, we have to swap columns
-            if self.h[i][j] == 0 and self._find_non_zero_element_below(i, j) is None:
+            if self._too_many_columns_removed():
+                raise ValueError('Too many columns were removed, n should be greater than m!')
+
+            # if pivot is 0 we need to swap rows (or columns)
+            if self.h[i][j] == 0:
                 non_zero_element_below = self._find_non_zero_element_below(i, j)
-                
                 if non_zero_element_below is None:
                     # swap columns
                     was_column_swap_possible = self._swap_columns(j, i)
