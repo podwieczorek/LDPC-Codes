@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 
+import utils.helper_functions
 
 def load_adjacency_matrix(file_path):
     return np.loadtxt(file_path, delimiter=' ', dtype=int)
@@ -28,31 +29,6 @@ def create_h_txt(matrix, new_matrix_shape, file_path):
     new_file_path = file_path[:-4] + '_h.txt'
     np.savetxt(new_file_path, new_matrix, delimiter=' ', fmt='%d')
     return new_matrix
-
-
-# todo test
-def create_h_alist(h_matrix, file_path):
-    new_file_path = file_path[:-4] + '.alist'
-    with open(new_file_path, 'w') as new_file:
-        
-        # number of variable nodes and number of parity check nodes
-        new_file.write(f'{h_matrix.shape[1]} {h_matrix.shape[0]}\n')
-        # next three lines are not used in encoder, so there alre filled with dummy values
-        new_file.write(f'0\n0\n0\n')
-        
-        # 1s indices for each column
-        for column in h_matrix.T:
-            for i, val in enumerate(column):
-                if val == 1:
-                    new_file.write(f'{i + 1} ')
-            new_file.write('\n')
-
-        # 1s indices for each row
-        for row in h_matrix:
-            for i, val in enumerate(row):
-                if val == 1:
-                    new_file.write(f'{i + 1} ')
-            new_file.write('\n')
 
 
 def visualize_graph(adj_matrix):
@@ -82,4 +58,4 @@ if __name__ == "__main__":
         make_graph_bipartite(adj_matrix, n)
 
     h_matrix = create_h_txt(adj_matrix, shape, file_path)
-    create_h_alist(h_matrix, file_path)
+    utils.helper_functions.create_h_alist(h_matrix, file_path)
