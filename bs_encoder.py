@@ -11,8 +11,6 @@ Thomas J. Richardson and Rüdiger L. Urbanke
 import numpy as np
 import warnings
 
-import utils.helper_functions
-
 
 class BsEncoder:
     def __init__(self, h, h_alist):
@@ -27,7 +25,9 @@ class BsEncoder:
         self._gauss_jordan_elimination()
         # If initial matrix does not have full row rank, in order to bring it into upper triangular form,
         # linear dependant rows should be removed. Consequently, code parameters may change.
+        print(self.h)
         self.create_new_h_alist()
+        return self.h, self.h_alist, self.k
 
     def encode(self, message):
         # back substitution
@@ -54,10 +54,12 @@ class BsEncoder:
 
     def _swap_columns(self, column_to_swap_index, pivot_position):
         was_column_swapped = True
-        for column_index, column in enumerate(self.h.T[column_to_swap_index:]):
-            for element in column[pivot_position:]:
-                if element == 1:
-                    self.h[:, [column_index, column_to_swap_index]] = self.h[:, [column_to_swap_index, column_index]]
+        for current_column_index in range(column_to_swap_index, self.n):
+            for i in range(pivot_position, self.m):
+                if self.h[i][current_column_index] == 1:
+                    # swap columns
+                    self.h[:, [current_column_index, column_to_swap_index]] = \
+                        self.h[:, [column_to_swap_index, current_column_index]]
                     return was_column_swapped
         return not was_column_swapped
 
@@ -85,6 +87,31 @@ class BsEncoder:
                     self.h[ri] = (self.h[ri] + self.h[i]) % 2
             i += 1
             j += 1
+        print(self.h)
 
     def create_new_h_alist(self):
-        pass
+        h_alist = []
+        first_row = [self.h.shape[1], self.h.shape[0]]
+        h_alist.append(first_row)
+
+        for i in range(3):
+            dummy_row = [-1 for _ in range(3)]
+            h_alist.append(dummy_row)
+
+        # 1s indices for each column
+        for column in self.h.T:
+            alist_row = []
+            for i, val in enumerate(column):
+                if val == 1:
+                    alist_row.append(i+1)
+            h_alist.append(alist_row)
+
+        # 1s indices for each row
+        for row in self.h:
+            alist_row = []
+            for i, val in enumerate(row):
+                if val == 1:
+                    alist_row.append(i+1)
+            h_alist.append(alist_row)
+
+        self.h_alist = h_alist

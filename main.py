@@ -2,9 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import channels.awgn_bpsk
-from ru_encoder import RuEncoder
 from bs_encoder import BsEncoder
-from encoder import Encoder
 from ms_decoder import decode
 
 from utils.helper_functions import get_h_alist
@@ -14,16 +12,14 @@ if __name__ == "__main__":
     h_alist = get_h_alist('generated_data/test2.alist')
     h_txt = 'generated_data/test2_h.txt'
     h = np.loadtxt(h_txt, dtype=int)
-    # todo initialize n and m after preprocessing
     n = np.shape(h)[1]
-    k = n - np.shape(h)[0]
     eb_n0_range = [i/4 for i in range(25)]
     messages = 100
     result_ber = dict()
     result_fer = dict()
 
     encoder = BsEncoder(h, h_alist)
-    encoder.preprocess()
+    h, h_alist, k = encoder.preprocess()
 
     for eb_n0 in eb_n0_range:
         ber = 0
