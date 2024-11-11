@@ -1,27 +1,35 @@
+import argparse
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 
-import utils.helper_functions
+import helper_functions
+
 
 def load_adjacency_matrix(file_path):
     return np.loadtxt(file_path, delimiter=' ', dtype=int)
 
 
+# works only for matrices in specific format
 def make_graph_bipartite(matrix, n):
-    print(f'Number of non-zero elements in generated matrix: {np.count_nonzero(matrix[:n, :n])} +', end=' ')
+    print(f'Number of non-zero elements in generated matrix: {np.count_nonzero(matrix[:n, :n])} +'
+          f'{np.count_nonzero(matrix[n:, n:])}')
+
+    # make sure that adjacency matrix is in appropriate format: graph is bipartite
     matrix[:n, :n] = 0
-    print(f'{np.count_nonzero(matrix[n:, n:])} ')
     matrix[n:, n:] = 0
 
+    # make sure that matrix is symmetric: graph is undirected
     matrix = matrix + matrix.T
     matrix[matrix > 1] = 1
 
 
-# todo remove empty rows and columns etc
+# creates parity check matrix from given adjacency matrix in the same directory
 def create_h_txt(matrix, new_matrix_shape, file_path):
     n = new_matrix_shape[1]
     new_matrix = matrix[n:, :n]
+
+    # remove all-zero rows and columns
     new_matrix = new_matrix[~np.all(new_matrix == 0, axis=1)]
     new_matrix = new_matrix[:, ~np.all(new_matrix == 0, axis=0)]
     print(new_matrix.shape)
@@ -41,21 +49,41 @@ def visualize_graph(adj_matrix):
     plt.show()
 
 
-if __name__ == "__main__":
-    file_path = '../generated_data/test2.txt'
-    adj_matrix = load_adjacency_matrix(file_path)
+def get_h_matrix_shape(adj_matrix):
+    # todo
+    if adj_matrix.shape[0] == 672:
+        n = 576
+        m = 96
+    elif adj_matrix.shape[0] == 192:
+        n = 128
+        m = 64
+    else:
+        raise ValueError('Shape of the adjacency matrix is not supported')
 
-    # todo use node attributes to differentiate between bit nodes and parity check nodes
-    n = 128
-    m = 64
-    shape = (m, n)
+    return m, n
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Script converts adjacency matrix of tanner graph to corresponding'
+                                                 'parity check matrix in both .txt and .alist format')
+    parser.add_argument('-p', '--path', help='Path to the directory with .alist files', required=True)
+
+    file_path = vars(parser.parse_args())['path']
+    adj_matrix = load_adjacency_matrix(file_path)
+    shape = get_h_matrix_shape(adj_matrix)
 
     # show graph before preprocessing
-    # visualize_graph(adj_matrix)
+    show_before_preprocessing = False
+    if show_before_preprocessing:
+        visualize_graph(adj_matrix)
 
     do_preprocess = True
     if do_preprocess:
-        make_graph_bipartite(adj_matrix, n)
+        make_graph_bipartite(adj_matrix, shape[1])
 
     h_matrix = create_h_txt(adj_matrix, shape, file_path)
-    utils.helper_functions.create_h_alist(h_matrix, file_path)
+    helper_functions.create_h_alist(h_matrix, file_path)
+
+
+if __name__ == "__main__":
+    main()

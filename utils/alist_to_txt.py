@@ -11,7 +11,7 @@ def convert_array_to_txt(arr, path, alist_file_path):
     try:
         np.savetxt(file_path, arr, fmt='%d', delimiter=' ')
     except Exception as e:
-        print(f'{e} could not save file: {file_path}! Check if file already exists')
+        print(f'{e} could not save file: {file_path}!')
 
 
 def convert_alist_to_array(alist_content):
