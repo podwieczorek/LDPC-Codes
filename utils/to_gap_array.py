@@ -10,7 +10,6 @@ def convert_to_array(path):
     if not os.path.isdir(new_dir):
         os.mkdir(new_dir)
 
-    # convert all .alist files to .txt files and save it in created  directory
     for txt_file in glob.glob(os.path.join(path, '*.txt')):
         with open(txt_file, 'r') as file:
             file_name = txt_file.split('/')[-1][:-4] + '_gap.txt'
@@ -18,9 +17,22 @@ def convert_to_array(path):
             convert_one_file_to_array(file, new_file_path)
 
 
+def get_file_name(dir_name):
+    base_name = 'h_gap'
+    ext = '.txt'
+    new_file_path = os.path.join(dir_name, base_name + ext)
+
+    counter = 1
+    while os.path.exists(new_file_path):
+        new_file_path = os.path.join(os.path.dirname(new_file_path), f"{base_name}{counter}{ext}")
+        counter += 1
+
+    return new_file_path
+
+
 def convert_one_file_to_array(file, new_file_path):
     if os.path.isdir(new_file_path):
-        new_file_path = os.path.join(new_file_path, 'h_gap.txt')
+        new_file_path = get_file_name(new_file_path)
 
     content = file.readlines()
     with open(new_file_path, 'w') as new_file:
@@ -38,7 +50,7 @@ def convert_one_file_to_array(file, new_file_path):
 def main():
     parser = argparse.ArgumentParser(description='Program converts parity check matrices in .txt format'
                                                  'to format that can be used in GAP')
-    parser.add_argument('-p', '--path', help='Path to the .txt file', required=True)
+    parser.add_argument('-p', '--path', help='Path to directory or .txt file', required=True)
     path = vars(parser.parse_args())['path']
 
     if os.path.isfile(path):

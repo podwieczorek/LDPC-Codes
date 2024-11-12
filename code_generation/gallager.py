@@ -9,7 +9,7 @@ def save_matrices_to_txt_files(created_matrices, dir_name):
         os.mkdir(dir_name)
 
     for i, matrix in enumerate(created_matrices):
-        file_name = 'gallager_matrix_' + str(i)
+        file_name = 'gallager_matrix_' + str(i) + '.txt'
         file_path = os.path.join(dir_name, file_name)
         try:
             np.savetxt(file_path, matrix, fmt='%d', delimiter=' ')
