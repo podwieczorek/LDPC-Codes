@@ -58,7 +58,7 @@ def get_h_matrix_shape(adj_matrix):
         n = 128
         m = 64
     else:
-        raise ValueError('Shape of the adjacency matrix is not supported')
+        raise ValueError(f'Shape: {adj_matrix.shape} of the adjacency matrix is not supported')
 
     return m, n
 
@@ -66,7 +66,7 @@ def get_h_matrix_shape(adj_matrix):
 def main():
     parser = argparse.ArgumentParser(description='Script converts adjacency matrix of tanner graph to corresponding'
                                                  'parity check matrix in both .txt and .alist format')
-    parser.add_argument('-p', '--path', help='Path to the directory with .alist files', required=True)
+    parser.add_argument('-p', '--path', help='.txt file to convert', required=True)
 
     file_path = vars(parser.parse_args())['path']
     adj_matrix = load_adjacency_matrix(file_path)

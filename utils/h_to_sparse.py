@@ -6,7 +6,7 @@ from helper_functions import get_h_alist
 
 
 def save_to_npz(graphs):
-    path = '../data/data_npz/test_data.npz'
+    path = '../data/data_npz/gallager_128_64.npz'
     np.savez(path, graphs)
 
 
@@ -78,7 +78,7 @@ def get_shape(h_alist):
 
 def main():
     data = dict()
-    path = '../data/test_h_matrices2'
+    path = '../code_generation/generated_gallager'
     for alist_file in glob.glob(os.path.join(path, '*.alist')):
         h_alist = get_h_alist(alist_file)
         indices, indices_pointers = h_to_sparse(h_alist)
