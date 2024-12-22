@@ -63,7 +63,6 @@ def main():
     created_matrices = []
     for _ in range(h):
         matrix = create_h_matrix(n, c, num_of_rows_submatrix)
-        print(matrix)
         created_matrices.append(matrix)
 
     save_matrices_to_txt_files(created_matrices, dir_name)

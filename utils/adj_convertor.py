@@ -12,20 +12,6 @@ def load_adjacency_matrix(file_path):
     return np.loadtxt(file_path, delimiter=' ', dtype=int)
 
 
-# works only for matrices in specific format
-def make_graph_bipartite(matrix, n):
-    print(f'Number of non-zero elements in generated matrix: {np.count_nonzero(matrix[:n, :n])} +'
-          f'{np.count_nonzero(matrix[n:, n:])}')
-
-    # make sure that adjacency matrix is in appropriate format: graph is bipartite
-    matrix[:n, :n] = 0
-    matrix[n:, n:] = 0
-
-    # make sure that matrix is symmetric: graph is undirected
-    matrix = matrix + matrix.T
-    matrix[matrix > 1] = 1
-
-
 # creates parity check matrix from given adjacency matrix in the same directory
 def create_h_txt(matrix, new_matrix_shape, file_path):
     n = new_matrix_shape[1]
@@ -78,10 +64,6 @@ def main():
     show_before_preprocessing = False
     if show_before_preprocessing:
         visualize_graph(adj_matrix)
-
-    do_preprocess = True
-    if do_preprocess:
-        make_graph_bipartite(adj_matrix, shape[1])
 
     h_matrix = create_h_txt(adj_matrix, shape, file_path)
     helper_functions.create_h_alist(h_matrix, file_path)

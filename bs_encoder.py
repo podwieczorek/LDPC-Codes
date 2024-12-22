@@ -9,7 +9,6 @@ Thomas J. Richardson and Rüdiger L. Urbanke
 
 
 import numpy as np
-import warnings
 
 
 class BsEncoder:
@@ -32,11 +31,11 @@ class BsEncoder:
     def encode(self, message):
         # back substitution
         p = np.zeros(self.m)
-        for i in range(self.m-1, -1, -1):
-            for j in range(i, self.m-1):
-                p[i] += self.h[i][j] * p[j]
+        for i in range(self.m):
             for j in range(self.k):
-                p[i] += self.h[i][j+self.m] * message[j]
+                p[i] += self.h[i][j] * message[j]
+            for j in range(i - 1):
+                p[i] += self.h[i][j+self.k] * p[j]
         p = p % 2
         return np.concatenate((p, message), axis=None)
 
@@ -45,12 +44,6 @@ class BsEncoder:
             if element == 1:
                 return pivot_position + element_index
         return None
-
-    def _remove_row(self, row_index):
-        warnings.warn("Removing linearly dependant row!")
-        self.h = np.delete(self.h, row_index, axis=0)
-        self.m -= 1
-        self.k += 1
 
     def _swap_columns(self, column_to_swap_index, pivot_position):
         was_column_swapped = True
@@ -75,8 +68,8 @@ class BsEncoder:
                     # swap columns
                     was_column_swap_possible = self._swap_columns(j, i)
                     if not was_column_swap_possible:
-                        self._remove_row(i)
-                        continue
+                        # todo add row removal
+                        raise ValueError("Gauss Jordan elimination failed!")
                 else:
                     # swap rows
                     self.h[[i, non_zero_element_below]] = self.h[[non_zero_element_below, i]]

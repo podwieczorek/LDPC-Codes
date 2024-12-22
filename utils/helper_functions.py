@@ -67,7 +67,6 @@ def remove_columns_h_alist(h_alist, h, removes):
         pass
 
 
-# todo test
 def create_h_alist(h_matrix, file_path):
     new_file_path = file_path[:-4] + '.alist'
     with open(new_file_path, 'w') as new_file:
