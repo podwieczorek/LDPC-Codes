@@ -34,9 +34,9 @@ class Encoder:
         self.g = self._create_generator_matrix()
         utils.helper_functions.swap_columns_h_alist(self.h_alist, self.column_swaps)
 
-    def encode(self, message):
-        codeword = (message @ self.g) % 2
-        return codeword
+    def encode(self, s):
+        c = (s @ self.g) % 2
+        return c
 
     def _find_non_zero_element_below(self, pivot_position, column_index):
         for element_index, element in enumerate(self.h.T[column_index][pivot_position:]):
